@@ -27,14 +27,15 @@ jobs:
             TICKET="No ticket found"
           fi
 
-          echo "note<<EOF" >> $GITHUB_OUTPUT
-          echo "🚀 *Release Deployed*" >> $GITHUB_OUTPUT
-          echo "• Repo: \`${{ github.repository }}\`" >> $GITHUB_OUTPUT
-          echo "• Hash: \`${HASH:0:7}\`" >> $GITHUB_OUTPUT
-          echo "• Date: \`${DATE}\`" >> $GITHUB_OUTPUT
-          echo "• Ticket: \`${TICKET}\`" >> $GITHUB_OUTPUT
-          echo "• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # 建立 release note 內容（換行用 \n）
+          NOTE="🚀 *Release Deployed*\n"
+          NOTE+="• Repo: \`${{ github.repository }}\`\n"
+          NOTE+="• Hash: \`${HASH:0:7}\`\n"
+          NOTE+="• Date: \`${DATE}\`\n"
+          NOTE+="• Ticket: \`${TICKET}\`\n"
+          NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
+
+          echo "note=$NOTE" >> $GITHUB_OUTPUT
 
       - name: Send to Slack
         uses: slackapi/slack-github-action@v1.25.0
