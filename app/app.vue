@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtRouteAnnouncer />
-    <NuxtWelcome />
+    Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.
   </div>
 </template>
