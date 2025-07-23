@@ -4,10 +4,11 @@ on:
   pull_request:
     types: [closed]
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   release-note:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,9 +17,9 @@ jobs:
       - name: Format release note
         id: format_note
         run: |
-          HASH=${{ github.event.pull_request.merge_commit_sha }}
+          HASH=${{ github.event.pull_request.merge_commit_sha || github.sha }}
           DATE=$(date "+%Y/%m/%d %H:%M")
-          TITLE="${{ github.event.pull_request.title }}"
+          TITLE="${{ github.event.pull_request.title || 'Manual run' }}"
 
           # 嘗試從 title 抓出 BC-XXXX
           if [[ "$TITLE" =~ (BC-[0-9]+) ]]; then
@@ -27,7 +28,6 @@ jobs:
             TICKET="No ticket found"
           fi
 
-          # 建立 release note 內容（換行用 \n）
           NOTE="🚀 *Release Deployed*\n"
           NOTE+="• Repo: \`${{ github.repository }}\`\n"
           NOTE+="• Hash: \`${HASH:0:7}\`\n"
