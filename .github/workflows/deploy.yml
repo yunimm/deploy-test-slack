@@ -23,7 +23,7 @@ jobs:
 
           # 嘗試從 title 抓出 BC-XXXX
           if [[ "$TITLE" =~ (BC-[0-9]+) ]]; then
-            TICKET="${BASH_REMATCH[1]} $TITLE"
+            TICKET="$TITLE"
           else
             TICKET="No ticket found"
           fi
