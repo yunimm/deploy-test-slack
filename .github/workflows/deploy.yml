@@ -1,34 +1,47 @@
-name: CI
+name: Release Note on PR Merge
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
+    types: [closed]
+    branches: [main]
 
 jobs:
-  build:
+  release-note:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      - name: Run a multi-line script
+      - name: Format release note
+        id: format_note
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          HASH=${{ github.event.pull_request.merge_commit_sha }}
+          DATE=$(date "+%Y/%m/%d %H:%M")
+          TITLE="${{ github.event.pull_request.title }}"
 
-      - name: Notify Slack on success
-        if: success()
+          # 嘗試從 title 抓出 BC-XXXX
+          if [[ "$TITLE" =~ (BC-[0-9]+) ]]; then
+            TICKET="${BASH_REMATCH[1]} $TITLE"
+          else
+            TICKET="No ticket found"
+          fi
+
+          echo "note<<EOF" >> $GITHUB_OUTPUT
+          echo "🚀 *Release Deployed*" >> $GITHUB_OUTPUT
+          echo "• Repo: \`${{ github.repository }}\`" >> $GITHUB_OUTPUT
+          echo "• Hash: \`${HASH:0:7}\`" >> $GITHUB_OUTPUT
+          echo "• Date: \`${DATE}\`" >> $GITHUB_OUTPUT
+          echo "• Ticket: \`${TICKET}\`" >> $GITHUB_OUTPUT
+          echo "• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Send to Slack
         uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
             {
-              "text": "✅ CI build completed successfully on `${{ github.repository }}`.\nCommit: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+              "text": "${{ steps.format_note.outputs.note }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
