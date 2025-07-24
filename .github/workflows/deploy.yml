@@ -46,7 +46,31 @@ jobs:
 
           echo "Processing title: $TITLE"
 
-          TICKETS=$(echo "$TITLE" | grep -oE 'BC-[0-9]+' || true)
+          # Extract BC tickets from title and PR description
+          TITLE_TICKETS=$(echo "$TITLE" | grep -oE 'BC-[0-9]+' || true)
+
+          # For PR merges, also check PR description for "Release notes:" section
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_BODY="${{ github.event.pull_request.body }}"
+            # Extract content after "Release notes:" (case insensitive)
+            RELEASE_NOTES_LINE=$(echo "$PR_BODY" | grep -i "release notes:" || true)
+            DESC_TICKETS=$(echo "$RELEASE_NOTES_LINE" | grep -oE 'BC-[0-9]+' || true)
+
+            if [ -n "$DESC_TICKETS" ]; then
+              # Use tickets from PR description if found
+              TICKETS="$DESC_TICKETS"
+              echo "Using tickets from PR description: $TICKETS"
+            else
+              # Fallback to title tickets
+              TICKETS="$TITLE_TICKETS"
+              echo "No release notes in PR description, using title tickets: $TICKETS"
+            fi
+          else
+            # For manual runs, just use title
+            TICKETS="$TITLE_TICKETS"
+            echo "Manual run, using title tickets: $TICKETS"
+          fi
+
           JIRA_LINKS=""
 
           if [ -z "$TICKETS" ]; then
