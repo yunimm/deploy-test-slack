@@ -10,6 +10,11 @@ jobs:
   release-note:
     if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    env:
+      JIRA_API_EMAIL: ${{ secrets.JIRA_API_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_BASE_URL: https://yourcompany.atlassian.net # 🔁 改成你實際使用的 Jira 網域
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,18 +26,29 @@ jobs:
           DATE=$(date "+%Y/%m/%d %H:%M")
           TITLE="${{ github.event.pull_request.title || 'Manual run' }}"
 
-          # 嘗試從 title 抓出 BC-XXXX
-          if [[ "$TITLE" =~ (BC-[0-9]+) ]]; then
-            TICKET="${BASH_REMATCH[1]} $TITLE"
-          else
-            TICKET="No ticket found"
+          # 抓出所有 BC-XXXX
+          TICKETS=$(echo "$TITLE" | grep -oE 'BC-[0-9]+')
+          JIRA_LINKS=""
+
+          for TICKET in $TICKETS; do
+            SUMMARY=$(curl -s -u "$JIRA_API_EMAIL:$JIRA_API_TOKEN" \
+              -H "Accept: application/json" \
+              "$JIRA_BASE_URL/rest/api/2/issue/$TICKET" | jq -r '.fields.summary')
+
+            LINK="[$TICKET] $SUMMARY ($JIRA_BASE_URL/browse/$TICKET)"
+            JIRA_LINKS+="$LINK\n"
+          done
+
+          # 若沒有抓到 ticket
+          if [ -z "$JIRA_LINKS" ]; then
+            JIRA_LINKS="No ticket found"
           fi
 
           NOTE="🚀 *Release Deployed*\n"
           NOTE+="• Repo: \`${{ github.repository }}\`\n"
           NOTE+="• Hash: \`${HASH:0:7}\`\n"
           NOTE+="• Date: \`${DATE}\`\n"
-          NOTE+="• Ticket: \`${TICKET}\`\n"
+          NOTE+="• Ticket(s):\n$JIRA_LINKS"
           NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
 
           echo "note=$NOTE" >> $GITHUB_OUTPUT
