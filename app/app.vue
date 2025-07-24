@@ -1,5 +1,5 @@
 <template>
   <div>
-    Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.
+    123
   </div>
 </template>
