@@ -34,20 +34,20 @@ jobs:
 
           # 抓出所有 BC-XXXX
           TICKETS=$(echo "$TITLE" | grep -oE 'BC-[0-9]+')
+
           JIRA_LINKS=""
 
-          for TICKET in $TICKETS; do
-            SUMMARY=$(curl -s -u "$JIRA_API_EMAIL:$JIRA_API_TOKEN" \
-              -H "Accept: application/json" \
-              "$JIRA_BASE_URL/rest/api/2/issue/$TICKET" | jq -r '.fields.summary')
-
-            LINK="[$TICKET] $SUMMARY ($JIRA_BASE_URL/browse/$TICKET)"
-            JIRA_LINKS+="$LINK\n"
-          done
-
-          # 若沒有抓到 ticket
-          if [ -z "$JIRA_LINKS" ]; then
+          if [ -z "$TICKETS" ]; then
             JIRA_LINKS="No ticket found"
+          else
+            for TICKET in $TICKETS; do
+              SUMMARY=$(curl -s -u "$JIRA_API_EMAIL:$JIRA_API_TOKEN" \
+                -H "Accept: application/json" \
+                "$JIRA_BASE_URL/rest/api/2/issue/$TICKET" | jq -r '.fields.summary')
+
+              LINK="[$TICKET] $SUMMARY ($JIRA_BASE_URL/browse/$TICKET)"
+              JIRA_LINKS+="$LINK\n"
+            done
           fi
 
           NOTE="🚀 *Release Deployed*\n"
