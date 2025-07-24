@@ -4,12 +4,13 @@ on:
   pull_request:
     types: [closed]
     branches: [main]
-
   workflow_dispatch:
     inputs:
       run_name:
         description: "Enter a run name for this run"
-        required: false
+        required: true
+
+run-name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_name || github.event.pull_request.title }}
 
 jobs:
   release-note:
@@ -24,26 +25,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Determine run name
-        id: set_run_name
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            NAME="${{ github.event.inputs.run_name }}"
-            if [[ -z "$NAME" ]]; then
-              NAME="Manual run - ${{ github.sha }}"
-            fi
-          else
-            NAME="${{ github.event.pull_request.title }}"
-          fi
-          echo "Run name: $NAME"
-          echo "run_name=$NAME" >> $GITHUB_OUTPUT
-
       - name: Format release note
         id: format_note
         run: |
           HASH=${{ github.event.pull_request.merge_commit_sha || github.sha }}
           DATE=$(date "+%Y/%m/%d %H:%M")
-          TITLE="${{ steps.set_run_name.outputs.run_name }}"
+          TITLE="${{ github.event.pull_request.title || github.event.inputs.run_name || 'Manual run' }}"
 
           # 抓出所有 BC-XXXX
           TICKETS=$(echo "$TITLE" | grep -oE 'BC-[0-9]+')
@@ -58,6 +45,7 @@ jobs:
             JIRA_LINKS+="$LINK\n"
           done
 
+          # 若沒有抓到 ticket
           if [ -z "$JIRA_LINKS" ]; then
             JIRA_LINKS="No ticket found"
           fi
@@ -66,7 +54,6 @@ jobs:
           NOTE+="• Repo: \`${{ github.repository }}\`\n"
           NOTE+="• Hash: \`${HASH:0:7}\`\n"
           NOTE+="• Date: \`${DATE}\`\n"
-          NOTE+="• Title: ${TITLE}\n"
           NOTE+="• Ticket(s):\n$JIRA_LINKS"
           NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
 
