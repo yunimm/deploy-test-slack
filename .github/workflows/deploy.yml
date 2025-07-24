@@ -76,32 +76,29 @@ jobs:
           if [ -z "$TICKETS" ]; then
             echo "No BC tickets found, creating simple notification"
             NOTE="🚀 **Release Deployed**\n\n"
-            NOTE+="**Repository:** ${{ github.repository }}\n"
-            NOTE+="**Commit:** \`${HASH:0:7}\`\n"
-            NOTE+="**Date:** ${DATE}\n"
-            NOTE+="**Title:** ${TITLE}\n\n"
-            NOTE+="[View Commit](https://github.com/${{ github.repository }}/commit/${HASH})"
+            NOTE="Hash: ${HASH}\n"
+            NOTE+="Date: ${DATE}\n"
+            NOTE+="- ${TITLE}"
 
             echo "note<<EOF" >> $GITHUB_OUTPUT
             echo -e "$NOTE" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           else
             echo "Found BC tickets: $TICKETS"
+            JIRA_LINKS=""
             for TICKET in $TICKETS; do
               SUMMARY=$(curl -s -u "$JIRA_API_EMAIL:$JIRA_API_TOKEN" \
                 -H "Accept: application/json" \
                 "$JIRA_BASE_URL/rest/api/2/issue/$TICKET" | jq -r '.fields.summary')
 
-              LINK="• [$TICKET - $SUMMARY]($JIRA_BASE_URL/browse/$TICKET)\n"
+              LINK="- <$JIRA_BASE_URL/browse/$TICKET|$TICKET $SUMMARY>\n"
               JIRA_LINKS+="$LINK"
             done
 
             NOTE="🚀 **Release Deployed**\n\n"
-            NOTE+="**Repository:** ${{ github.repository }}\n"
-            NOTE+="**Commit:** \`${HASH:0:7}\`\n"
-            NOTE+="**Date:** ${DATE}\n\n"
-            NOTE+="**Tickets:**\n$JIRA_LINKS\n"
-            NOTE+="[View Commit](https://github.com/${{ github.repository }}/commit/${HASH})"
+            NOTE="Hash: ${HASH}\n"
+            NOTE+="Date: ${DATE}\n"
+            NOTE+="$JIRA_LINKS"
 
             echo "note<<EOF" >> $GITHUB_OUTPUT
             echo -e "$NOTE" >> $GITHUB_OUTPUT
