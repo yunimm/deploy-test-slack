@@ -57,11 +57,7 @@ jobs:
           NOTE+="• Ticket(s):\n$JIRA_LINKS"
           NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
 
-          {
-            echo "note<<EOF"
-            echo -e "$NOTE"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          echo "note=$NOTE" >> $GITHUB_OUTPUT
 
       - name: Send to Slack
         uses: slackapi/slack-github-action@v1.25.0
