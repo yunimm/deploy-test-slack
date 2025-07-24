@@ -35,7 +35,7 @@ jobs:
             HASH="${{ github.event.pull_request.merge_commit_sha }}"
           fi
 
-          DATE=$(date "+%Y/%m/%d %H:%M")
+          DATE=$(TZ="Asia/Taipei" date "+%Y/%m/%d %H:%M")
 
           # Get title - for manual runs use input, for PR use PR title
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -75,8 +75,9 @@ jobs:
 
           if [ -z "$TICKETS" ]; then
             echo "No BC tickets found, creating simple notification"
-            NOTE="🚀 **Release Deployed**\n\n"
-            NOTE="Hash: ${HASH}\n"
+            NOTE="🚀 **Release Deployed**\n"
+            NOTE+="Repo: ${{ github.repository }}\n"
+            NOTE+="Hash: ${HASH}\n"
             NOTE+="Date: ${DATE}\n"
             NOTE+="- ${TITLE}"
 
@@ -95,8 +96,9 @@ jobs:
               JIRA_LINKS+="$LINK"
             done
 
-            NOTE="🚀 **Release Deployed**\n\n"
-            NOTE="Hash: ${HASH}\n"
+            NOTE="🚀 **Release Deployed**\n"
+            NOTE+="Repo: ${{ github.repository }}\n"
+            NOTE+="Hash: ${HASH}\n"
             NOTE+="Date: ${DATE}\n"
             NOTE+="$JIRA_LINKS"
 
