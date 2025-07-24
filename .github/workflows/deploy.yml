@@ -28,14 +28,29 @@ jobs:
       - name: Format release note
         id: format_note
         run: |
-          HASH=${{ github.event.pull_request.merge_commit_sha || github.sha }}
-          DATE=$(date "+%Y/%m/%d %H:%M")
-          TITLE="${{ github.event.pull_request.title || github.event.inputs.run_name || 'Manual run' }}"
+          # Get commit hash - for manual runs use current SHA
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            HASH="${{ github.sha }}"
+          else
+            HASH="${{ github.event.pull_request.merge_commit_sha }}"
+          fi
 
-          TICKETS=$(echo "$TITLE" | grep -oE 'BC-[0-9]+')
+          DATE=$(date "+%Y/%m/%d %H:%M")
+
+          # Get title - for manual runs use input, for PR use PR title
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TITLE="${{ github.event.inputs.run_name }}"
+          else
+            TITLE="${{ github.event.pull_request.title }}"
+          fi
+
+          echo "Processing title: $TITLE"
+
+          TICKETS=$(echo "$TITLE" | grep -oE 'BC-[0-9]+' || true)
           JIRA_LINKS=""
 
           if [ -z "$TICKETS" ]; then
+            echo "No BC tickets found, creating simple notification"
             NOTE="🚀 *Release Deployed*\n"
             NOTE+="• Repo: \`${{ github.repository }}\`\n"
             NOTE+="• Hash: \`${HASH:0:7}\`\n"
@@ -47,6 +62,7 @@ jobs:
             echo -e "$NOTE" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           else
+            echo "Found BC tickets: $TICKETS"
             for TICKET in $TICKETS; do
               SUMMARY=$(curl -s -u "$JIRA_API_EMAIL:$JIRA_API_TOKEN" \
                 -H "Accept: application/json" \
