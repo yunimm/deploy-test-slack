@@ -57,14 +57,16 @@ jobs:
           NOTE+="• Ticket(s):\n$JIRA_LINKS"
           NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
 
-          echo "note=$NOTE" >> $GITHUB_OUTPUT
+          echo "note<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$NOTE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Send to Slack
         uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
-            {
-              "text": "${{ steps.format_note.outputs.note }}"
-            }
+            ${{ toJSON(
+              format('{"text": "%s"}', steps.format_note.outputs.note)
+            ) }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
