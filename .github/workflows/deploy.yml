@@ -75,12 +75,12 @@ jobs:
 
           if [ -z "$TICKETS" ]; then
             echo "No BC tickets found, creating simple notification"
-            NOTE="🚀 *Release Deployed*\n"
-            NOTE+="• Repo: \`${{ github.repository }}\`\n"
-            NOTE+="• Hash: \`${HASH:0:7}\`\n"
-            NOTE+="• Date: \`${DATE}\`\n"
-            NOTE+="• Title: \`${TITLE}\`\n"
-            NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
+            NOTE="🚀 **Release Deployed**\n\n"
+            NOTE+="**Repository:** ${{ github.repository }}\n"
+            NOTE+="**Commit:** \`${HASH:0:7}\`\n"
+            NOTE+="**Date:** ${DATE}\n"
+            NOTE+="**Title:** ${TITLE}\n\n"
+            NOTE+="[View Commit](https://github.com/${{ github.repository }}/commit/${HASH})"
 
             echo "note<<EOF" >> $GITHUB_OUTPUT
             echo -e "$NOTE" >> $GITHUB_OUTPUT
@@ -92,16 +92,16 @@ jobs:
                 -H "Accept: application/json" \
                 "$JIRA_BASE_URL/rest/api/2/issue/$TICKET" | jq -r '.fields.summary')
 
-              LINK="[$TICKET] $SUMMARY ($JIRA_BASE_URL/browse/$TICKET)"
-              JIRA_LINKS+="$LINK\n"
+              LINK="• [$TICKET - $SUMMARY]($JIRA_BASE_URL/browse/$TICKET)\n"
+              JIRA_LINKS+="$LINK"
             done
 
-            NOTE="🚀 *Release Deployed*\n"
-            NOTE+="• Repo: \`${{ github.repository }}\`\n"
-            NOTE+="• Hash: \`${HASH:0:7}\`\n"
-            NOTE+="• Date: \`${DATE}\`\n"
-            NOTE+="• Ticket(s):\n$JIRA_LINKS"
-            NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
+            NOTE="🚀 **Release Deployed**\n\n"
+            NOTE+="**Repository:** ${{ github.repository }}\n"
+            NOTE+="**Commit:** \`${HASH:0:7}\`\n"
+            NOTE+="**Date:** ${DATE}\n\n"
+            NOTE+="**Tickets:**\n$JIRA_LINKS\n"
+            NOTE+="[View Commit](https://github.com/${{ github.repository }}/commit/${HASH})"
 
             echo "note<<EOF" >> $GITHUB_OUTPUT
             echo -e "$NOTE" >> $GITHUB_OUTPUT
