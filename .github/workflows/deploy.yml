@@ -36,34 +36,39 @@ jobs:
           JIRA_LINKS=""
 
           if [ -z "$TICKETS" ]; then
+            NOTE="🚀 *Release Deployed*\n"
+            NOTE+="• Repo: \`${{ github.repository }}\`\n"
+            NOTE+="• Hash: \`${HASH:0:7}\`\n"
+            NOTE+="• Date: \`${DATE}\`\n"
+            NOTE+="• Title: \`${TITLE}\`\n"
+            NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
+
             echo "note<<EOF" >> $GITHUB_OUTPUT
-            echo "No BC ticket found, skipping Slack notification." >> $GITHUB_OUTPUT
+            echo -e "$NOTE" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
-            exit 0
+          else
+            for TICKET in $TICKETS; do
+              SUMMARY=$(curl -s -u "$JIRA_API_EMAIL:$JIRA_API_TOKEN" \
+                -H "Accept: application/json" \
+                "$JIRA_BASE_URL/rest/api/2/issue/$TICKET" | jq -r '.fields.summary')
+
+              LINK="[$TICKET] $SUMMARY ($JIRA_BASE_URL/browse/$TICKET)"
+              JIRA_LINKS+="$LINK\n"
+            done
+
+            NOTE="🚀 *Release Deployed*\n"
+            NOTE+="• Repo: \`${{ github.repository }}\`\n"
+            NOTE+="• Hash: \`${HASH:0:7}\`\n"
+            NOTE+="• Date: \`${DATE}\`\n"
+            NOTE+="• Ticket(s):\n$JIRA_LINKS"
+            NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
+
+            echo "note<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$NOTE" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           fi
 
-          for TICKET in $TICKETS; do
-            SUMMARY=$(curl -s -u "$JIRA_API_EMAIL:$JIRA_API_TOKEN" \
-              -H "Accept: application/json" \
-              "$JIRA_BASE_URL/rest/api/2/issue/$TICKET" | jq -r '.fields.summary')
-
-            LINK="[$TICKET] $SUMMARY ($JIRA_BASE_URL/browse/$TICKET)"
-            JIRA_LINKS+="$LINK\n"
-          done
-
-          NOTE="🚀 *Release Deployed*\n"
-          NOTE+="• Repo: \`${{ github.repository }}\`\n"
-          NOTE+="• Hash: \`${HASH:0:7}\`\n"
-          NOTE+="• Date: \`${DATE}\`\n"
-          NOTE+="• Ticket(s):\n$JIRA_LINKS"
-          NOTE+="• View Commit: https://github.com/${{ github.repository }}/commit/${HASH}"
-
-          echo "note<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$NOTE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
       - name: Send to Slack
-        if: contains(steps.format_note.outputs.note, 'BC-')
         uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
